@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qr-generator:latest
+    container_name: qr-generator
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_PATH=/app/data/qrcode.sqlite
+      - JWT_SECRET=change-this-to-a-random-secret
+      - JWT_EXPIRES_IN=7d
+    volumes:
+      - qr_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  qr_data:
