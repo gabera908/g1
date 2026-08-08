@@ -11,8 +11,16 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 
 const db = new DatabaseSync(dbPath)
 
-db.exec('PRAGMA journal_mode = WAL;')
-db.exec('PRAGMA foreign_keys = ON;')
+try {
+  db.exec('PRAGMA journal_mode = WAL;')
+} catch (e) {
+  console.warn('WAL journal mode failed, using default:', e.message)
+}
+try {
+  db.exec('PRAGMA foreign_keys = ON;')
+} catch (e) {
+  console.warn('PRAGMA foreign_keys failed:', e.message)
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
