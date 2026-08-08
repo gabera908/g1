@@ -10,6 +10,7 @@ const qrRoutes = require('./routes/qr.routes')
 
 const app = express()
 
+// Helmet: disable policies that block Vite's crossorigin assets and Google Fonts
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -18,16 +19,42 @@ app.use(helmet({
 app.use(cors())
 app.use(express.json())
 
+// --- Static files: serve BEFORE API routes so assets load reliably ---
+const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist')
+console.log('Client dist path:', clientDist, '| exists:', fs.existsSync(clientDist))
+if (fs.existsSync(clientDist)) {
+  try {
+    const files = fs.readdirSync(clientDist)
+    console.log('Client dist contents:', files)
+    if (fs.existsSync(path.join(clientDist, 'assets'))) {
+      console.log('Assets dir contents:', fs.readdirSync(path.join(clientDist, 'assets')))
+    }
+  } catch (e) {
+    console.error('Error listing dist:', e.message)
+  }
+}
+
 app.get('/api/health', (req, res) => {
-  const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist')
   const distExists = fs.existsSync(clientDist)
-  const distFiles = distExists ? fs.readdirSync(clientDist) : []
+  let distFiles = []
+  let assetFiles = []
+  try {
+    if (distExists) {
+      distFiles = fs.readdirSync(clientDist)
+      const assetsDir = path.join(clientDist, 'assets')
+      if (fs.existsSync(assetsDir)) {
+        assetFiles = fs.readdirSync(assetsDir)
+      }
+    }
+  } catch (e) { /* ignore */ }
   return res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
+    node: process.version,
     clientDist,
     distExists,
     distFiles,
+    assetFiles,
   })
 })
 
@@ -67,17 +94,23 @@ app.get('/r/:shortId', (req, res) => {
   }
 })
 
-const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist')
-console.log('Client dist directory:', clientDist, 'Exists:', fs.existsSync(clientDist))
-
+// Serve frontend SPA
 if (fs.existsSync(clientDist)) {
-  app.use(express.static(clientDist))
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/r/')) return next()
-    if (path.extname(req.path)) {
-      return res.status(404).send('Asset not found')
+  app.use(express.static(clientDist, {
+    maxAge: '1d',
+    etag: true,
+  }))
+
+  // SPA fallback: serve index.html for non-API, non-asset routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/r/')) {
+      return next()
     }
-    return res.sendFile(path.join(clientDist, 'index.html'))
+    // If it looks like a file request (has extension), don't serve index.html
+    if (path.extname(req.path)) {
+      return next()
+    }
+    res.sendFile(path.join(clientDist, 'index.html'))
   })
 }
 
