@@ -55,10 +55,15 @@ app.get('/r/:shortId', (req, res) => {
 })
 
 const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist')
+console.log('Client dist directory:', clientDist, 'Exists:', fs.existsSync(clientDist))
+
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist))
   app.use((req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/r/')) return next()
+    if (path.extname(req.path)) {
+      return res.status(404).send('Asset not found')
+    }
     return res.sendFile(path.join(clientDist, 'index.html'))
   })
 }

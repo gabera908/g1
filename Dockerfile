@@ -24,7 +24,7 @@ RUN npm ci --omit=dev
 COPY server ./server
 
 # Copy built client into server's expected path
-COPY --from=build /app/client/dist ./server/../client/dist
+COPY --from=build /app/client/dist /app/client/dist
 
 # SQLite data directory
 RUN mkdir -p /app/data
