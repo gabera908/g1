@@ -102,7 +102,7 @@ if (fs.existsSync(clientDist)) {
   }))
 
   // SPA fallback: serve index.html for non-API, non-asset routes
-  app.get('*', (req, res, next) => {
+  app.use((req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/r/')) {
       return next()
     }
@@ -110,7 +110,7 @@ if (fs.existsSync(clientDist)) {
     if (path.extname(req.path)) {
       return next()
     }
-    res.sendFile(path.join(clientDist, 'index.html'))
+    return res.sendFile(path.join(clientDist, 'index.html'))
   })
 }
 
