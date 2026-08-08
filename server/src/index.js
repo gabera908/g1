@@ -10,12 +10,25 @@ const qrRoutes = require('./routes/qr.routes')
 
 const app = express()
 
-app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
+}))
 app.use(cors())
 app.use(express.json())
 
 app.get('/api/health', (req, res) => {
-  return res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist')
+  const distExists = fs.existsSync(clientDist)
+  const distFiles = distExists ? fs.readdirSync(clientDist) : []
+  return res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    clientDist,
+    distExists,
+    distFiles,
+  })
 })
 
 app.use('/api/auth', authRoutes)
