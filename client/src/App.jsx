@@ -3,7 +3,7 @@ import { Routes, Route, Link, NavLink, Navigate, useNavigate } from 'react-route
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import {
-  QrCode, Menu, X, Languages, Home, PlusCircle, LayoutDashboard,
+  Menu, X, Languages, Home, PlusCircle, LayoutDashboard,
   User, Settings, LogOut, LogIn, UserPlus, ChevronRight, Globe, FileText,
   Images, Video, Wifi, UtensilsCrossed, Briefcase, Contact, Music, Smartphone,
   Link as LinkIcon, Ticket, Facebook, Instagram, Share2, MessageCircle,
@@ -77,7 +77,7 @@ function Header() {
       <div className="container-app flex h-16 items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-            <QrCode size={20} />
+            <QrIcon size={20} />
           </span>
           <span className="text-lg font-bold text-gray-900">{t('common.appName')}</span>
         </Link>
