@@ -111,6 +111,33 @@ router.put('/:id', auth, (req, res) => {
   }
 })
 
+router.get('/:id/stats', auth, (req, res) => {
+  try {
+    const qr = db
+      .prepare('SELECT id FROM qrcodes WHERE id = ? AND user_id = ?')
+      .get(Number(req.params.id), req.user.id)
+
+    if (!qr) {
+      return res.status(404).json({ message: 'QR code not found' })
+    }
+
+    const totalScans = db
+      .prepare('SELECT COUNT(*) as count FROM scan_logs WHERE qrcode_id = ?')
+      .get(qr.id).count
+
+    const recentScans = db
+      .prepare(
+        'SELECT scanned_at, ip, user_agent, referrer FROM scan_logs WHERE qrcode_id = ? ORDER BY scanned_at DESC LIMIT 50'
+      )
+      .all(qr.id)
+
+    return res.json({ totalScans, recentScans })
+  } catch (err) {
+    console.error('stats error:', err)
+    return res.status(500).json({ message: 'Server error' })
+  }
+})
+
 router.delete('/:id', auth, (req, res) => {
   const result = db
     .prepare('DELETE FROM qrcodes WHERE id = ? AND user_id = ?')

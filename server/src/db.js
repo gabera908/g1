@@ -3,7 +3,10 @@ const fs = require('fs')
 const { DatabaseSync } = require('node:sqlite')
 require('dotenv').config()
 
-const dbPath = path.resolve(__dirname, '..', process.env.DB_PATH || './data/qrcode.sqlite')
+const envDbPath = process.env.DB_PATH || './data/qrcode.sqlite'
+const dbPath = path.isAbsolute(envDbPath)
+  ? envDbPath
+  : path.resolve(__dirname, '..', envDbPath)
 fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 
 const db = new DatabaseSync(dbPath)

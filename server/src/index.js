@@ -21,11 +21,44 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/qrcodes', qrRoutes)
 
+// Dynamic QR code redirect & scan logger
+app.get('/r/:shortId', (req, res) => {
+  try {
+    const { shortId } = req.params
+    const db = require('./db')
+    const qr = db.prepare('SELECT * FROM qrcodes WHERE short_id = ?').get(shortId)
+
+    if (!qr) {
+      return res.status(404).send('QR code not found')
+    }
+
+    try {
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || ''
+      const userAgent = req.headers['user-agent'] || ''
+      const referrer = req.headers['referer'] || req.headers['referrer'] || ''
+      db.prepare(
+        'INSERT INTO scan_logs (qrcode_id, ip, user_agent, referrer) VALUES (?, ?, ?, ?)'
+      ).run(qr.id, String(ip), String(userAgent), String(referrer))
+    } catch (logErr) {
+      console.error('Scan logging error:', logErr)
+    }
+
+    let target = qr.content
+    if (!target.startsWith('http://') && !target.startsWith('https://')) {
+      target = 'http://' + target
+    }
+    return res.redirect(302, target)
+  } catch (err) {
+    console.error('Redirect error:', err)
+    return res.status(500).send('Server error')
+  }
+})
+
 const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist')
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist))
   app.use((req, res, next) => {
-    if (req.path.startsWith('/api')) return next()
+    if (req.path.startsWith('/api') || req.path.startsWith('/r/')) return next()
     return res.sendFile(path.join(clientDist, 'index.html'))
   })
 }
