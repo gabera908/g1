@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 
-const API_URL = '/api'
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+const API_URL = `${API_BASE}/api`
 
 function authHeaders() {
   const token = localStorage.getItem('token')
